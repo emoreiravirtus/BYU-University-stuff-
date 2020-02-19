@@ -1,0 +1,221 @@
+"""
+
+Pong Game - Prove Assignment - Week 5
+by:Elias Moreira.
+This program is a One Player Pong.
+
+"""
+import arcade
+import random
+
+
+class Point:
+    """
+    This class will determine Point attributes
+    """
+    def __init__(self):
+        # Set our random Ball center.
+        self.x = random.uniform(1, 1)
+        self.y = random.uniform(1, 299)
+        # Set our Paddle center.
+        self.p_x = 995
+        self.p_y = 150.0
+
+
+class Velocity:
+    """
+    This class will determine random velocity
+    """
+    def __init__(self):
+        self.dx = 15
+        self.dy = 15
+
+
+class Paddle:
+    """
+    Paddle settings
+    """
+    def __init__(self):
+        # Set our Paddle center.
+        self.center = Point()
+        # Setting the paddle range:
+        self.paddle_top = self.center.p_y + 25
+        self.paddle_bottom = self.center.p_y - 25
+
+    def draw(self):
+        """
+        Draw our Paddle on screen
+        """
+        arcade.draw_rectangle_filled(self.center.p_x, self.center.p_y, 10, 50, arcade.color.ICTERINE)
+
+    def move_up(self):
+        """
+        Method to move our paddle up and update range
+        """
+        self.center.p_y += 20
+        self.paddle_top += 20
+        self.paddle_bottom += 20
+
+    def move_down(self):
+        """
+        Method to move our paddle down and update range
+        """
+        self.center.p_y += -20
+        self.paddle_top -= 20
+        self.paddle_bottom -= 20
+
+
+class Ball:
+    """
+    This class has all the Pong elements and rules, the ball,
+    velocity, point and the paddle.
+    """
+
+    def __init__(self):
+        # Set our ball center to Point class.
+        self.center = Point()
+        # Set our velocity to Velocity class.
+        self.velocity = Velocity()
+        # This will start the ball static.
+        self.static = True
+
+    def draw(self):
+        """
+        Draw our Ball on screen
+        """
+        arcade.draw_circle_filled(self.center.x, self.center.y, 10, arcade.color.BLACK)
+
+    def advance(self):
+        """
+        Ball moves here
+        """
+
+        # Set the ball movement.
+        self.center.x += self.velocity.dx
+        self.center.y += self.velocity.dy
+        # The ball is not static anymore.
+        self.static = False
+
+    def ball_return(self):
+        """
+        It will return our ball to a random point and velocity
+        if it gets lost beyond right side
+        """
+        self.center.x = random.uniform(1, 1)
+        self.center.y = random.uniform(1, 299)
+        self.velocity.dx = 10
+        self.velocity.dy = 10
+
+
+class Pong(arcade.Window):
+    """
+    Our game will be in here
+    """
+
+    def __init__(self):
+        # Initiate our 400x300 Window.
+        super().__init__(1000, 300)
+        # Declaring our Paddle, Ball, and Velocity...
+        self.paddle = Paddle()
+        self.ball = Ball()
+        self.velocity = Velocity()
+        # The ball starts static.
+        self.static = True
+        # Declaring score
+        self.score = 0
+
+        # Setting our pressed options.
+        self.up_pressed = False
+        self.down_pressed = False
+
+        # Our background color DARK_LIVER
+        arcade.set_background_color(arcade.color.LIGHT_MOSS_GREEN)
+
+    def on_draw(self):
+        """
+        Render the screen
+        """
+        arcade.start_render()
+        # Create our paddle and ball objects
+        self.paddle.draw()
+        self.ball.draw()
+        # Set the score text.
+        arcade.draw_text("Score:"+str(self.score), 5, 5, arcade.color.BLACK, 12, 0, "left")
+
+    def on_key_press(self, key, key_modifiers):
+        """
+        Method for keyboard options UP and DOWN
+        to move our Paddle
+        """
+
+        # If the buttons are pressed.
+        if key == arcade.key.UP:
+            self.up_pressed = True
+        elif key == arcade.key.DOWN:
+            self.down_pressed = True
+
+    def on_key_release(self, key, modifiers):
+        """
+        Called when the user releases a key.
+        """
+
+        if key == arcade.key.UP:
+            self.up_pressed = False
+        elif key == arcade.key.DOWN:
+            self.down_pressed = False
+
+    def update(self, delta_time: float):
+        """
+        Ball Movement here, also the held down arrows configuration.
+        """
+
+        # This will be called once, only to start moving the ball
+        if self.static:
+            self.ball.advance()
+
+        # Following ifs will change the ball
+        # advance depending on ball position
+        # making it bounce in all the screen
+        # limits.
+        if self.ball.center.x > 1050:
+            self.ball.ball_return()
+            self.score -= 5
+        if self.ball.center.y > 293:
+            self.ball.velocity.dy -= self.ball.velocity.dy * 2
+        if self.ball.center.y < 7:
+            self.ball.velocity.dy -= self.ball.velocity.dy * 2
+        if 0 > self.ball.center.x < 7:
+            self.ball.velocity.dx -= self.ball.velocity.dx * 2
+        # This is specifically to bounce in the paddle.
+        if self.ball.center.x > self.paddle.center.p_x - 10.5 \
+                and self.paddle.paddle_top > self.ball.center.y > self.paddle.paddle_bottom:
+            self.ball.velocity.dx -= self.ball.velocity.dx * 2
+            self.score += 1
+
+        # If the UP key in held down...
+        if self.up_pressed:
+            # Following line blocks the paddle inside the limits.
+            if self.paddle.center.p_y < 275:
+                # If Paddle is not touching the top.
+                self.paddle.move_up()
+
+        # If the DOWN key in held down...
+        if self.down_pressed:
+            # Following line blocks the paddle inside the limits.
+            if self.paddle.center.p_y > 25:
+                # If Paddle is not touching the bottom.
+                self.paddle.move_down()
+
+
+def main():
+    # Initiate the console.
+    window = Pong()
+    arcade.run()
+
+# Main running First
+
+
+if __name__ == "__main__":
+    main()
+
+
