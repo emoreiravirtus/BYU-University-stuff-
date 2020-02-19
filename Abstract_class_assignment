@@ -1,0 +1,84 @@
+"""
+File: check07b.py
+Author: Br. Burton
+
+Demonstrates abstract base classes.
+"""
+
+from abc import ABC
+from abc import abstractmethod
+
+
+class Shape(ABC):
+    def __init__(self):
+        self.name = ""
+
+    def display(self):
+        print("{} - {:.2f}".format(self.name, self.get_area()))
+
+    @abstractmethod
+    def get_area(self):
+        return 0.0
+
+
+class Circle(Shape):
+
+    def __init__(self):
+        """
+        Circle Class
+        """
+        super().__init__()
+        self.name = "Circle"
+        self.radius = 0.0
+
+    def get_area(self):
+        return 3.14 * self.radius * self.radius
+
+
+class Rectangle(Shape):
+
+    def __init__(self):
+        """
+        Rectangle Class
+        """
+        super().__init__()
+        self.name = "Rectangle"
+        self.length = 0.0
+        self.width = 0.0
+
+    def get_area(self):
+        return self.length * self.width
+
+
+def main():
+
+    shapes = []       # Declaring our list.
+
+    command = ""
+
+    while command != "q":
+        command = input("Please enter 'c' for circle, 'r' for rectangle or 'q' to quit: ")
+
+        if command == "c":
+            radius = float(input("Enter the radius: "))
+            circle = Circle()   # Creating our object.
+            circle.radius = radius  # Setting its radius.
+            shapes.append(circle)   # Adding to our shapes list.
+
+        elif command == "r":
+            length = float(input("Enter the length: "))
+            width = float(input("Enter the width: "))
+            rectangle = Rectangle()  # Creating our object.
+            rectangle.length = length    # Setting object dimensions.
+            rectangle.width = width
+            shapes.append(rectangle)
+
+    # Done entering shapes, now lets print them all out:
+
+    for shape in shapes:
+        shape.display()
+
+
+if __name__ == "__main__":
+    main()
+
