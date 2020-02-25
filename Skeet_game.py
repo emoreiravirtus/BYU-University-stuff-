@@ -11,6 +11,7 @@ import random
 # These are Global constants to use throughout the game
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 500
+BACKGROUND_COLOR = arcade.color.WHITE
 
 RIFLE_WIDTH = 100
 RIFLE_HEIGHT = 20
@@ -165,33 +166,97 @@ class StrongTarget(Target):
 
     def __init__(self):
         """
-        Safe target
+        Strong target
         """
         super().__init__()
         self.velocity.dx = random.uniform(1, 3)
         self.velocity.dy = random.uniform(-3, 3)
+
+        # Our strongest target has more attributes, it's bigger, has a different color and life.
         self.life = 3
+        self.radius = 50
+        self.color = arcade.color.BALL_BLUE
 
     def draw(self):
         """
-        Draw our safe target.
+        Draw our Strong target.
         """
-        arcade.draw_circle_outline(self.center.x, self.center.y, self.radius, TARGET_COLOR)
+        arcade.draw_circle_outline(self.center.x, self.center.y, self.radius, self.color)
         text_x = self.center.x - (self.radius / 2)
         text_y = self.center.y - (self.radius / 2)
-        arcade.draw_text(repr(self.life), text_x, text_y, TARGET_COLOR, font_size=20)
+        arcade.draw_text(repr(self.life), text_x, text_y, self.color, font_size=20)
 
     def hit(self):
         """
-        When the bullet hits the target, The Target might die or decrease in life.
+        When the bullet hits the target, The Target might die or decrease in life. In this case, as we are with our
+        strongest and biggest target, it will decrease in size too.
         """
         self.life -= 1
+        self.radius -= 15  # Decrease in size! You are dying!!
+
+        if self.life == 2:      # If he get hit, he starts to bleed.
+            self.color = arcade.color.CRIMSON
+
+        if self.life == 1:   # Almost dying, the blood is more intense.
+            self.velocity.dx = random.uniform(-1, 1)   # Target got dizzy...
+            self.velocity.dy = random.uniform(-1, 1)
+            self.color = arcade.color.CRIMSON_GLORY # Color changes.
+
+        # If life gets to 0, you are a dead target.
         if self.life == 0:
             self.alive = False
             return 5
         else:
             return 1
 
+
+class SpecialTarget(Target):
+
+    def __init__(self):
+        """
+        This is like a big boss, don't mess with him...
+        """
+        super().__init__()
+        self.velocity.dx = random.uniform(0, 2)
+        self.velocity.dy = random.uniform(-1, 0)
+
+        # Our strongest target has more attributes, it's bigger, has a different color and life.
+        self.life = 15
+        self.radius = 3
+        self.color = arcade.color.BALL_BLUE
+
+    def draw(self):
+        """
+        Draw our Strong target.
+        """
+        arcade.draw_circle_outline(self.center.x, self.center.y, self.radius, self.color)
+        text_x = self.center.x - (self.radius / 2)
+        text_y = self.center.y - (self.radius / 2)
+        arcade.draw_text(repr(self.life), text_x, text_y, self.color, font_size=20)
+
+    def hit(self):
+        """
+        When the bullet hits the target, The Target might die or decrease in life. In this case, as we are with our
+        strongest and biggest target, it will decrease in size too.
+        """
+        self.life -= 1
+        self.radius += 10 # It gets bigger with shots.
+
+        if self.life == 2:      # If he get hit, he starts to bleed.
+            self.color = arcade.color.CRIMSON
+
+        if self.life == 1:   # Almost dying, the blood is intense.
+            self.velocity.dx = 0   # FINISH HIM!
+            self.velocity.dy = 0
+
+            self.color = arcade.color.CRIMSON_GLORY # Color changes.
+
+        # If life gets to 0, you are a dead target.
+        if self.life == 0:
+            self.alive = False
+            return 5
+        else:
+            return 1
 
 
 
@@ -240,7 +305,7 @@ class Game(arcade.Window):
         self.bullets = []
         self.targets = []
 
-        arcade.set_background_color(arcade.color.WHITE)
+        arcade.set_background_color(BACKGROUND_COLOR)
 
     def on_draw(self):
         """
@@ -268,9 +333,9 @@ class Game(arcade.Window):
         """
         Puts the current score on the screen
         """
-        score_text = "Score: {}".format(self.score)
-        start_x = 10
-        start_y = SCREEN_HEIGHT - 20
+        score_text = "Score: {} \nGame Challenge: get 4 big balls with 1 life.".format(self.score)
+        start_x = 20
+        start_y = SCREEN_HEIGHT - 40
         arcade.draw_text(score_text, start_x=start_x, start_y=start_y, font_size=12, color=arcade.color.NAVY_BLUE)
 
     def update(self, delta_time):
@@ -298,15 +363,18 @@ class Game(arcade.Window):
         Creates a new target of a random type and adds it to the list.
         :return:
         """
-        num = random.randint(1, 3)
+        num = random.randint(1, 4)
         if num == 1:
             target = StandardTarget()
 
         elif num == 2:
             target = SafeTarget()
 
-        else:
+        elif num == 3:
             target = StrongTarget()
+
+        else:
+            target = SpecialTarget()
 
         self.targets.append(target)
 
