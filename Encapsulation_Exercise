@@ -1,0 +1,78 @@
+class GPA:
+
+    def __init__(self, value = 0.0):
+        """
+        Set our initial gpa to 0.0.
+        """
+        self._gpa = value
+
+    def get_gpa(self):
+        return self._gpa
+
+    def set_gpa(self, value):
+        """
+        This set method will set our value to a valid gpa range. 0.0 -> 4.0.
+        """
+        if value < 0.0:
+            self._gpa = 0.0
+        elif value > 4.0:
+            self._gpa = 4.0
+        else:
+            self._gpa = value
+
+    def get_letter(self):
+        """
+        Return a letter depending on gpa.
+        """
+        if 1.99 >= self._gpa >= 1.0:
+            return "D"
+        elif 2.99 >= self._gpa >= 2.0:
+            return "C"
+        elif 3.99 >= self._gpa >= 3.0:
+            return "B"
+        elif self._gpa == 4.0:
+            return "A"
+        else:
+            return "F"
+
+    def set_letter(self, letter):
+        """
+        Return a gpa depending on letter.
+        """
+        if letter == "A":
+            self._gpa = 4.0
+        elif letter == "B":
+            self._gpa = 3.0
+        elif letter == "C":
+            self._gpa = 2.0
+        elif letter == "D":
+            self._gpa = 1.0
+        else:
+            self._gpa = 0.0
+
+
+def main():
+    student = GPA()
+
+    print("Initial values:")
+    print("GPA: {:.2f}".format(student.get_gpa()))
+    print("Letter: {}".format(student.get_letter()))
+
+    value = float(input("Enter a new GPA: "))
+
+    student.set_gpa(value)
+
+    print("After setting value:")
+    print("GPA: {:.2f}".format(student.get_gpa()))
+    print("Letter: {}".format(student.get_letter()))
+
+    letter = input("Enter a new letter: ")
+
+    student.set_letter(letter)
+
+    print("After setting letter:")
+    print("GPA: {:.2f}".format(student.get_gpa()))
+    print("Letter: {}".format(student.get_letter()))
+
+if __name__ == "__main__":
+    main()
