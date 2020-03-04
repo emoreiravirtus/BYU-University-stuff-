@@ -1,0 +1,18 @@
+
+
+def main():
+    valid_input = False
+
+    while not valid_input:
+        try:
+            n = int(input("Enter a number: "))
+            valid_input = True
+        except ValueError:
+            print("The value entered is not valid")
+
+    # If the value entered is valid (an int) the program will print that number times 2.
+    print("The result is: {}".format(n * 2))
+
+
+if __name__ == "__main__":
+    main()
