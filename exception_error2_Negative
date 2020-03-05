@@ -1,0 +1,42 @@
+
+
+def get_inverse(n):
+    """
+    Make a function get_inverse that accepts a number, n, and then returns the result 1/n.
+    """
+    # Raise negative number error
+    if n < 0:
+        raise NegativeNumberError("Error: The value cannot be negative")
+
+    # If n is ok, return the inverse of n.
+    return 1 / n
+
+
+class NegativeNumberError(Exception):
+
+    def __init__(self, message):
+        # Negative number handler.
+        super().__init__(message)
+
+
+def main():
+    """
+    In main, prompt the user for the value,
+    then pass it to your get_inverse, and save the result in a variable.
+    Finally, display the result.
+    """
+    try:
+        number = int(input("Enter a number: "))
+        result_number = get_inverse(number)
+    except NegativeNumberError:
+        print("Error: The value cannot be negative")
+    except ValueError:
+        print("Error: The value must be a number")
+    except ZeroDivisionError:
+        print("Error: Cannot divide by zero")
+    else:
+        print("The result is: {}".format(result_number))
+
+
+if __name__ == "__main__":
+    main()
