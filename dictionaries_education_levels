@@ -1,0 +1,19 @@
+def main():
+    education_level = {}
+
+    file = open("census.csv", "r")
+
+    for rows in file:
+        key = rows.split(",")
+        key = key[3]
+
+        if key in education_level:
+            education_level[key] += 1
+        else:
+            education_level[key] = 1
+    for key in education_level.keys():
+        print(education_level[key], " -- ")
+    file.close()
+
+if __name__ == "__main__":
+    main()
