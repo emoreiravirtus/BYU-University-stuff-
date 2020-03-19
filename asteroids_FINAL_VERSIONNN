@@ -1,0 +1,611 @@
+"""
+File: asteroids.py
+Original Author: Br. Burton
+Designed to be completed by others
+This program implements the asteroids game.
+"""
+import arcade
+import random
+import math
+
+# CHANGE THESE SPECS IF YOU WANT
+
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+
+BULLET_RADIUS = 30
+BULLET_SPEED = 10
+BULLET_LIFE = 60
+
+SHIP_TURN_AMOUNT = 3
+SHIP_THRUST_AMOUNT = 0.25
+SHIP_RADIUS = 30
+
+# Consider that to INITIAL_ROCK_COUNT value will be added 3 rocks in game class. 
+INITIAL_ROCK_COUNT = 2
+
+
+# Sprites directories
+
+SPACESHIP_IMG = "images/playerShip1_orange.png"
+LARGE_ASTEROID_IMG = "images/meteorGrey_big1.png"
+MEDIUM_ASTEROID_IMG = "images/meteorGrey_med1.png"
+SMALL_ASTEROID_IMG = "images/meteorGrey_small1.png"
+LASER_IMG = "images/laserBlue01.png"
+ASTRONAUT_IMG = "images/Astronaut.png"
+
+
+class Point:
+    """
+    This class will determine Point attributes
+    """
+
+    def __init__(self):
+        # Set our Object center.
+        self.x = 1
+        self.y = 1
+
+
+class Velocity:
+
+    def __init__(self):
+        """
+        This class will determine velocity
+        """
+        self.dx = 10
+        self.dy = 10
+
+
+class FlyingObjects:
+    """
+    FLying objects parent class.
+    """
+
+    def __init__(self):
+        self.center = Point()
+        self.velocity = Velocity()
+        self.alive = True
+
+    def advance(self):
+        """
+        FlyingObject moves here
+        """
+        self.center.x += self.velocity.dx
+        self.center.y += self.velocity.dy
+
+    def is_off_screen(self, screen_width, screen_height):
+        """
+        It will check if the object is off screen and put it on the other side of screen.
+        """
+        if self.center.x > screen_width or self.center.x < 0:
+            return True
+
+        if 0 > self.center.y > screen_height or self.center.y < 0:
+            return True
+        else:
+            return False
+
+
+class Ship(FlyingObjects):
+    """
+    Ship
+    The ship obeys the laws of motion. When in motion, the ship will tend to stay in motion.
+    Note that the angle or orientation of the ship can be different than the direction it is traveling.
+    The right and left arrows rotate the ship 3 degrees to either direction.
+    The up arrow will increase the velocity in the direction the ship is pointed by 0.25 pixels/frame.
+    For collision detection, you can assume the ship is a circle of radius 30.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.center.x = SCREEN_WIDTH / 2
+        self.center.y = SCREEN_HEIGHT / 2
+        self.velocity.dx = SHIP_THRUST_AMOUNT
+        self.velocity.dy = SHIP_THRUST_AMOUNT
+        self.radius = 30
+        self.angle = 0
+
+
+        self.texture = arcade.load_texture(SPACESHIP_IMG) # Spaceship image when it is alive.
+        self.texture2 = arcade.load_texture(ASTRONAUT_IMG) # Spaceship image when it dies.
+
+    def draw(self):
+        """
+        Draw our ship.
+        """
+        arcade.draw_texture_rectangle(self.center.x, self.center.y, 60, 60, self.texture, self.angle, 255)
+
+
+    # Following methods will move our ship as player's commands.
+
+    def move_up(self):
+        self.velocity.dx += math.sin(math.radians(self.angle)) * -SHIP_THRUST_AMOUNT
+        self.velocity.dy += math.cos(math.radians(self.angle)) * SHIP_THRUST_AMOUNT
+
+    def move_down(self):
+        self.velocity.dx += math.sin(math.radians(self.angle)) * SHIP_THRUST_AMOUNT
+        self.velocity.dy += math.cos(math.radians(self.angle)) * -SHIP_THRUST_AMOUNT
+
+    def move_left(self):
+        self.angle += SHIP_TURN_AMOUNT
+
+    def move_right(self):
+        self.angle -= SHIP_TURN_AMOUNT
+
+
+class Asteroids(FlyingObjects):
+    """
+    Our Game Asteroids class, this is a child class from FlyingObjects, but
+    also a parent class for different asteroid classes (small, medium, large)
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.angle = 0
+        self.rotation = 1
+
+    def draw(self):
+        pass
+
+
+class LargeAsteroids(Asteroids):
+    """
+    Large Asteroid Rules:
+    - Moves at 1.5 pixels per frame, at a random initial direction.
+    - Rotates at 1 degrees per frame.
+    - For collision, can be treated like a 15 radius ball.
+    - If a large asteroid gets hit, it breaks apart and becomes two medium asteroids and one small one.
+            The first medium asteroid has the same velocity as the original large one plus 2 pixel/frame
+            in the up direction.
+            The second medium asteroid has the same velocity as the original large one plus 2 pixel/frame
+            in the down direction.
+            The small asteroid has the original velocity plus 5 pixels/frame to the right.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.texture = arcade.load_texture(LARGE_ASTEROID_IMG)
+        self.radius = 15
+
+        # random initial direction, velocity:
+        self.center.x = random.uniform(0, SCREEN_HEIGHT)
+        self.center.y = random.uniform(0, SCREEN_WIDTH)
+        self.velocity.dx = random.uniform(-1.5, 1.5)
+        self.velocity.dy = random.uniform(-1.5, 1.5)
+
+    def advance(self):
+        """
+        Rotate in a rate of 1 degree per frame
+        """
+        self.angle += 1
+        self.center.x += self.velocity.dx
+        self.center.y += self.velocity.dy
+
+    def draw(self):
+        arcade.draw_texture_rectangle(self.center.x, self.center.y, 30, 30, self.texture, self.angle, 255)
+
+
+class MediumAsteroids(LargeAsteroids):
+    """
+    Medium Asteroid Rules:
+    - Rotates at -2 degrees per frame.
+    - For collision detection, can be treated as a circle with radius 5.
+    - If hit, it breaks apart and becomes two small asteroids.
+         The small asteroid has the same velocity as the original
+            medium one plus 1.5 pixels/frame up and 1.5 pixels/frame to the right.
+         The second, 1.5 pixels/frame down and 1.5 to the left.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.texture = arcade.load_texture(MEDIUM_ASTEROID_IMG)
+        self.radius = 5
+
+        # random initial direction, velocity:
+        self.velocity.dx = random.uniform(-1.5, 1.5)
+        self.velocity.dy = random.uniform(-1.5, 1.5)
+
+    def advance(self):
+        """
+        Rotate in a rate of 1 degree per frame
+        """
+        self.angle -= 2
+        self.center.x += self.velocity.dx
+        self.center.y += self.velocity.dy
+
+    def draw(self):
+        arcade.draw_texture_rectangle(self.center.x, self.center.y, 10, 10, self.texture, self.angle, 255)
+
+
+class SmallAsteroids(MediumAsteroids):
+    """
+    Small Asteroid Rules:
+    - Rotates at 5 degrees per frame.
+    - For collision, can be treated like a 2 radius ball.
+    - If is hit, is destroyed and removed from game.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.texture = arcade.load_texture(SMALL_ASTEROID_IMG)
+        self.radius = 2
+
+        # random initial direction, velocity:
+        self.velocity.dx = random.uniform(-1.5, 1.5)
+        self.velocity.dy = random.uniform(-1.5, 1.5)
+
+    def advance(self):
+        """
+        Rotate in a rate of 1 degree per frame
+        """
+        self.angle += 5
+        self.center.x += self.velocity.dx
+        self.center.y += self.velocity.dy
+
+    def draw(self):
+        arcade.draw_texture_rectangle(self.center.x, self.center.y, 4, 4, self.texture, self.angle, 255)
+
+
+class Bullet(FlyingObjects):
+
+    def __init__(self):
+        """
+        The bullets are little balls that comes out from Ship to destroy an asteroid
+        """
+        super().__init__()
+        self.texture = arcade.load_texture(LASER_IMG)
+        self.angle = 0
+        self.life = BULLET_LIFE
+        self.radius = BULLET_RADIUS
+
+    def draw(self):
+        """
+        Draw our Bullet on screen
+        """
+        arcade.draw_texture_rectangle(self.center.x, self.center.y, 100, 60, self.texture, self.angle, 255)
+
+    def fire(self, angle: float):
+        """
+        Fire the bullet method.
+        :param angle:
+        :return: none
+        """
+        
+        self.velocity.dx = math.cos(math.radians(angle)) * BULLET_SPEED
+        self.velocity.dy = math.sin(math.radians(angle)) * BULLET_SPEED
+        self.advance()
+
+
+class Game(arcade.Window):
+    """
+    This class handles all the game callbacks and interaction
+    This class will then call the appropriate functions of
+    each of the above classes.
+    You are welcome to modify anything in this class.
+    """
+
+    def __init__(self, width, height):
+        """
+        Sets up the initial conditions of the game
+        :param width: Screen width
+        :param height: Screen height
+        """
+        super().__init__(width, height)
+        arcade.set_background_color(arcade.color.SMOKY_BLACK)
+
+        # Creating our asteroids and bullets arrays.
+        self.asteroids = []
+        self.bullets = []
+
+        # If the chances given are over, the game ends.
+        self.game_over = False
+
+        # Creating ship.
+        self.ship = Ship()
+
+        # To help with ship movements.
+        self.move_up = False
+
+        self.held_keys = set()
+
+        self.rocks_level = INITIAL_ROCK_COUNT
+
+        # Method to create the initial asteroids on screen, it is the value of INITIAL_ROCK_COUNT + 3
+        self.create_asteroids()
+
+
+        self.life = 100 # Spaceship life bar.
+        self.life_color = arcade.color.BRIGHT_GREEN # Spaceship life bar initial color.
+        self.chances = 3 # User's chances.
+
+
+    def on_draw(self):
+        """
+        Called automatically by the arcade framework.
+        Handles the responsibility of drawing all elements.
+        """
+
+        # clear the screen to begin drawing
+        arcade.start_render()
+
+        # Life and chances bar
+        arcade.draw_text("Life: {}".format(self.life), start_x= 100, start_y=50, font_size=15, color=self.life_color)
+        arcade.draw_text("Chances: {}".format(self.chances), start_x= 200, start_y=50, font_size=15, color=arcade.color.WHITE)
+
+        # Ship
+        self.ship.draw()
+
+        # Asteroids
+        for asteroid in self.asteroids:
+            asteroid.draw()
+
+        # If the game is not over yet.    
+        if self.chances > 0:
+
+            # Bullets
+            for bullet in self.bullets:
+                bullet.draw()
+
+            # Death message.         
+            if not self.ship.alive:
+                arcade.draw_text('astronaut message ~"...HELP! MAYDAY MAYDAY"', start_x=100, start_y=SCREEN_HEIGHT/2, font_size=20, color=arcade.color.WHITE)
+                arcade.draw_text('press "G" to help our astronaut', start_x=150, start_y=(SCREEN_HEIGHT/2)-50, font_size=10, color=arcade.color.WHITE)
+
+            # Next Level message.
+            elif not self.asteroids:
+                arcade.draw_text('great astronaut!!! want to discover more asteroids?', start_x=100, start_y=SCREEN_HEIGHT/2, font_size=20, color=arcade.color.WHITE)
+                arcade.draw_text('press "R" to NEXT LEVEL!', start_x=150, start_y=(SCREEN_HEIGHT/2)-50, font_size=10, color=arcade.color.WHITE)
+       
+       # Game over message.
+        else:
+            arcade.draw_text('GAME OVER ...', start_x=50, start_y=SCREEN_HEIGHT/2, font_size=70, color=arcade.color.WHITE)
+
+
+    def update(self, delta_time):
+        """
+        Update each object in the game.
+        :param delta_time: tells us how much time has actually elapsed
+        """
+
+        self.ship.advance()
+
+        # Following Method: if an object goes to a screen border, it will appear at the other side.
+        self.check_off_screen(self.ship)
+
+        for asteroid in self.asteroids:
+            asteroid.advance()
+            self.check_off_screen(asteroid)
+
+        # If the ship broke, an lost astronaut will appear 
+        # (The spaceship sprite will be changed to an astronaut sprite)
+        # and the astronaut will be floating with no control.
+        if not self.ship.alive:
+            self.ship.texture = arcade.load_texture(ASTRONAUT_IMG)
+            self.ship.angle -= 3
+
+        # If spaceship life goes 0 or under...
+        if self.life <= 0:
+            self.ship.alive = False
+
+            # This is the line to change to astronaut sprite.
+            self.ship.texture = self.ship.texture2
+
+        # If the user still have chances, the bullets and the score will appear.
+        if self.chances > 0:
+            if 100 >= self.life >= 75:
+                self.life_color = arcade.color.BRIGHT_GREEN
+            elif 74 >= self.life >= 50:
+                self.life_color = arcade.color.CADMIUM_YELLOW
+            elif 49 >= self.life >= 25:
+                self.life_color = arcade.color.CHROME_YELLOW
+            else:
+                self.life_color = arcade.color.CANDY_APPLE_RED
+
+            for bullet in self.bullets:
+                bullet.advance()
+                self.check_off_screen(bullet)
+                bullet.life -= 1
+                if bullet.life < 0:
+                    bullet.alive = False
+                    self.cleanup_zombies()
+
+            self.check_keys()
+
+            # Check collisions between rocks, spaceship and bullets.
+            self.check_collisions()
+
+
+    def check_off_screen(self, flyingobject):
+        """
+        Checks if the object is off screen. so It will wrap.
+        """
+        if flyingobject.center.x > SCREEN_WIDTH:
+            flyingobject.center.x = 0
+        if flyingobject.center.x < 0:
+            flyingobject.center.x = SCREEN_WIDTH
+
+        if flyingobject.center.y > SCREEN_HEIGHT:
+            flyingobject.center.y = 0
+        if flyingobject.center.y < 0:
+            flyingobject.center.y = SCREEN_HEIGHT
+
+    def check_collisions(self):
+        """
+        Checks to see if bullets have hit targets.
+        Updates scores and removes dead items.
+        :return:
+        """
+
+        # Following for will take care of the collision between spaceship and asteroid.
+        for asteroid in self.asteroids:
+            if asteroid.alive:
+                too_close = self.ship.radius + asteroid.radius
+
+            if (abs(self.ship.center.x - asteroid.center.x) < too_close and
+                    abs(self.ship.center.y - asteroid.center.y) < too_close):
+                if self.life > 0:
+
+                    # Depending on asteroid's size, the spaceship life will be affected.
+                    if asteroid.radius == 15:
+                        self.life -= 30
+                    elif asteroid.radius == 5:
+                        self.life -= 10
+                    else:
+                        self.life -= 2
+                    if self.life <= 0:
+                        self.chances -= 1
+
+                # Remove the asteroid when it collide with the spaceship.
+                asteroid.alive = False
+                self.cleanup_zombies()
+
+
+        # Following for will manage bullet to asteroids collision.
+        for bullet in self.bullets:
+            for asteroid in self.asteroids:
+
+                # Make sure they are both alive before checking for a collision
+                if asteroid.alive:
+                    too_close = bullet.radius + asteroid.radius
+
+                    if (abs(bullet.center.x - asteroid.center.x) < too_close and
+                            abs(bullet.center.y - asteroid.center.y) < too_close):
+                        # its a hit!
+
+
+                        # If the asteroid is a big one...
+                        if asteroid.radius == 15:
+                            new_asteroid1 = MediumAsteroids()
+                            new_asteroid2 = MediumAsteroids()
+                            new_asteroid3 = SmallAsteroids()
+
+                            new_asteroid1.center.x = asteroid.center.x
+                            new_asteroid1.center.y = asteroid.center.y
+                            new_asteroid1.velocity.dy += 2
+
+                            new_asteroid2.center.x = asteroid.center.x
+                            new_asteroid2.center.y = asteroid.center.y
+                            new_asteroid2.velocity.dy -= 2
+
+                            new_asteroid3.center.x = asteroid.center.x
+                            new_asteroid3.center.y = asteroid.center.y
+                            new_asteroid3.velocity.dx += 5
+
+                            self.asteroids.append(new_asteroid1)
+                            self.asteroids.append(new_asteroid2)
+
+                        # If the asteroid is a medium one...
+                        if asteroid.radius == 5:
+                            new_asteroid1 = SmallAsteroids()
+                            new_asteroid2 = SmallAsteroids()
+
+                            new_asteroid1.center.x = asteroid.center.x
+                            new_asteroid1.center.y = asteroid.center.y
+                            new_asteroid1.velocity.dx += 1.5
+                            new_asteroid1.velocity.dy += 1.5
+
+                            new_asteroid2.center.x = asteroid.center.x
+                            new_asteroid2.center.y = asteroid.center.y
+                            new_asteroid2.velocity.dx -= 1.5
+                            new_asteroid2.velocity.dy -= 1.5
+
+                            self.asteroids.append(new_asteroid1)
+                            self.asteroids.append(new_asteroid2)
+
+                        # If the asteroid is a small one...
+                        if asteroid.radius == 2:
+                            asteroid.alive = False
+
+
+                        # Remove the bullet and Asteroid from game.
+                        bullet.alive = False
+                        asteroid.alive = False
+                        self.cleanup_zombies()
+
+    def cleanup_zombies(self):
+        """
+        Removes any dead bullets or asteroids from the list.
+        :return:
+        """
+        for bullet in self.bullets:
+            if not bullet.alive:
+                self.bullets.remove(bullet)
+
+        for asteroid in self.asteroids:
+            if not asteroid.alive:
+                self.asteroids.remove(asteroid)
+
+
+    def check_keys(self):
+        """
+        This function checks for keys that are being held down.
+        """
+        if arcade.key.LEFT in self.held_keys:
+            self.ship.move_left()
+
+        if arcade.key.RIGHT in self.held_keys:
+            self.ship.move_right()
+
+        if arcade.key.UP in self.held_keys:
+            self.ship.move_up()
+
+        if arcade.key.DOWN in self.held_keys:
+            self.ship.move_down()
+
+        if arcade.key.SPACE in self.held_keys:
+            bullet = Bullet()
+            bullet.angle = self.ship.angle + 90
+            bullet.center.x = self.ship.center.x
+            bullet.center.y = self.ship.center.y
+            angle = self.ship.angle + 90
+            bullet.fire(angle)
+            self.bullets.append(bullet)
+
+    def on_key_press(self, key: int, modifiers: int):
+        """
+        Puts the current key in the set of keys that are being held.
+        """
+
+        if self.chances > 0:   
+
+            if self.ship.alive:
+                self.held_keys.add(key)
+
+                if not self.asteroids:
+                    if key == arcade.key.R:
+                        self.create_asteroids()
+
+            if not self.ship.alive:
+                if key == arcade.key.G:
+                    self.ship.alive = True
+                    self.ship.texture = arcade.load_texture(SPACESHIP_IMG)
+                    self.ship.velocity.dx = 0.3
+                    self.ship.velocity.dy = 0.3
+                    self.life = 100
+
+    def on_key_release(self, key: int, modifiers: int):
+        """
+        Removes the current key from the set of held keys.
+        """
+        if key in self.held_keys:
+            self.held_keys.remove(key)
+
+
+    def create_asteroids(self):
+        """
+        This will be called at the game's beggining and everytime player enters
+        a new level. This method will generate a Large asteroids list."""
+        self.rocks_level += 3
+        rocks = 0
+        while rocks < self.rocks_level:
+            self.check_keys()
+            asteroid = LargeAsteroids()
+            self.asteroids.append(asteroid)
+            rocks += 1
+
+# Creates the game and starts it going
+window = Game(SCREEN_WIDTH, SCREEN_HEIGHT)
+arcade.run()
+
+
+
